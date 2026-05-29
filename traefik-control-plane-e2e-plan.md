@@ -522,7 +522,11 @@ Base path: `/api/v1`
 
 ## 10. Security Plan
 
-1. OIDC SSO (primary) + local emergency admin account (break-glass).
+1. Multi-provider auth:
+- OIDC SSO (primary) via Keycloak/Auth0/Authentik.
+- Google OAuth (`GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`).
+- Microsoft OAuth (`MICROSOFT_CLIENT_ID`, `MICROSOFT_CLIENT_SECRET`, tenant config).
+- Local username/password login for homelab fallback and break-glass admin.
 2. RBAC with backend enforcement (never UI-only).
 3. Secrets never stored in plaintext; only references in DB.
 4. Signed and immutable audit entries (hash chain or WORM destination optional).
@@ -917,6 +921,8 @@ Create these files as the first executable artifact so the stack can run directl
 2. `deploy/.env.example`
 - Includes all required keys with placeholders:
 `BASE_DOMAIN`, `ACME_EMAIL`, `ACME_DNS_PROVIDER`, provider credentials, `POSTGRES_PASSWORD`, `OIDC_*`, `AGENT_SHARED_TOKEN`.
+- Also include:
+`GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `MICROSOFT_CLIENT_ID`, `MICROSOFT_CLIENT_SECRET`, `MICROSOFT_TENANT_ID`, `LOCAL_AUTH_ENABLED`, `INITIAL_ADMIN_USERNAME`, `INITIAL_ADMIN_PASSWORD_HASH`.
 
 3. `deploy/traefik/static/traefik.yml`
 - Static Traefik configuration for entrypoints, providers, logging, API, and certificate resolver wiring.
@@ -936,7 +942,11 @@ Create these files as the first executable artifact so the stack can run directl
 
 - Backend: FastAPI + Uvicorn, SQLAlchemy + Alembic, Pydantic v2.
 - Frontend: Vite + React (JavaScript), React Hook Form + Zod, TanStack Query.
-- Auth: Keycloak/Auth0/Authentik via OIDC.
+- Auth:
+- Keycloak/Auth0/Authentik via OIDC.
+- Google OAuth (client ID/secret).
+- Microsoft OAuth (client ID/secret + tenant).
+- Local username/password (bcrypt/argon2 hash storage, rate limiting, lockout policy).
 - Queue/Locking: Redis Redlock or Postgres advisory locks.
 - Diff Viewer: Monaco diff or `react-diff-view`.
 - Deployment: Docker Compose initially; optional Nomad/K8s later.
