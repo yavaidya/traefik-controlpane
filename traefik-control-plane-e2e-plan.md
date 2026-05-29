@@ -840,6 +840,39 @@ Exit Criteria:
 - UI reachable at `https://traefik-admin.<your-domain>`.
 - DNS challenge successfully issues a cert.
 - API can create a DNS change request and apply it to provider sandbox.
+6. Generate runnable baseline infrastructure files in a dedicated folder:
+- `deploy/docker-compose.yml`
+- `deploy/.env.example`
+- `deploy/traefik/static/traefik.yml`
+- `deploy/traefik/dynamic/active/.gitkeep`
+- `deploy/traefik/dynamic/staging/.gitkeep`
+- `deploy/traefik/acme/.gitkeep`
+- Include a short `deploy/README.md` with bring-up commands and permissions steps (`acme.json` with `600`).
+
+## 20. Implementation Deliverable: Production-Ready Stack Files
+
+Create these files as the first executable artifact so the stack can run directly:
+
+1. `deploy/docker-compose.yml`
+- Includes Traefik, control-ui, control-api, apply-agent, postgres, redis.
+- Uses environment variables only from `.env`.
+- Mounts dynamic config directories for staged/active promotion.
+
+2. `deploy/.env.example`
+- Includes all required keys with placeholders:
+`BASE_DOMAIN`, `ACME_EMAIL`, `ACME_DNS_PROVIDER`, provider credentials, `POSTGRES_PASSWORD`, `OIDC_*`, `AGENT_SHARED_TOKEN`.
+
+3. `deploy/traefik/static/traefik.yml`
+- Static Traefik configuration for entrypoints, providers, logging, API, and certificate resolver wiring.
+
+4. Supporting directories and placeholders
+- Ensure dynamic and acme paths exist in git with `.gitkeep`.
+- Document one-time creation and permission hardening for `acme.json`.
+
+5. `deploy/README.md`
+- Contains exact commands:
+`cp .env.example .env`, `touch traefik/acme/acme.json`, `chmod 600 traefik/acme/acme.json`, `docker compose up -d`.
+- Includes initial verification checklist for UI, cert issuance, and health endpoints.
 
 ---
 
