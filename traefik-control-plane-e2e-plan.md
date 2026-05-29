@@ -581,6 +581,7 @@ Notes:
 - Keep `./traefik/acme/acme.json` permission at `600`.
 - Use DNS challenge for wildcard certs.
 - Do not let UI/API write directly to `active`; only `apply-agent` can promote `staging` to `active`.
+- Control-plane `BASE_DOMAIN` is only for the control plane hostnames; managed application domains are added via UI.
 
 ## 12.4 Routing and Base URL Setup (Control UI + Control API)
 
@@ -625,6 +626,24 @@ export async function apiFetch(path, options = {}) {
   return response.status === 204 ? null : response.json();
 }
 ```
+
+## 12.5 Multi-Domain, DNS Challenge, and Resolver Mapping
+
+The deployed Traefik can manage many unrelated domains. This is not constrained by `BASE_DOMAIN`.
+
+How it works:
+1. Add zones/domains in UI (`dns_zones`, `dns_records`).
+2. Create TLS profiles in UI and choose `cert_resolver` per domain group.
+3. Attach TLS profiles to routers for each app/domain.
+
+Resolver strategy:
+- Use multiple ACME resolvers in Traefik static config, for example:
+- `le_cf` for Cloudflare-hosted zones.
+- `le_route53` for Route53-hosted zones.
+
+Operational rule:
+- Every domain must be mapped to a resolver that can write `_acme-challenge` TXT records for that zone.
+- UI should validate this mapping before apply and block changes when resolver/provider permissions do not match.
 
 ## 13. Delivery Plan
 
@@ -790,7 +809,7 @@ Create these files as the first executable artifact so the stack can run directl
 
 2. `deploy/.env.example`
 - Includes all required keys with placeholders:
-`BASE_DOMAIN`, `ACME_EMAIL`, `ACME_DNS_PROVIDER`, provider credentials, `POSTGRES_PASSWORD`, `OIDC_*`, `AGENT_SHARED_TOKEN`.
+`BASE_DOMAIN`, `ACME_EMAIL`, provider credentials, `POSTGRES_PASSWORD`, `OIDC_*`, `AGENT_SHARED_TOKEN`.
 - Also include:
 `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `MICROSOFT_CLIENT_ID`, `MICROSOFT_CLIENT_SECRET`, `MICROSOFT_TENANT_ID`, `LOCAL_AUTH_ENABLED`, `INITIAL_ADMIN_USERNAME`, `INITIAL_ADMIN_PASSWORD_HASH`.
 

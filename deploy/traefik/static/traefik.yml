@@ -17,12 +17,18 @@ providers:
     exposedByDefault: false
 
 certificatesResolvers:
-  le:
+  le_cf:
     acme:
       email: "${ACME_EMAIL}"
       storage: /etc/traefik/acme/acme.json
       dnsChallenge:
-        provider: "${ACME_DNS_PROVIDER}"
+        provider: cloudflare
+  le_route53:
+    acme:
+      email: "${ACME_EMAIL}"
+      storage: /etc/traefik/acme/acme.json
+      dnsChallenge:
+        provider: route53
 
 log:
   level: INFO
