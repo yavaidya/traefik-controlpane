@@ -1,5 +1,3 @@
-version: "3.9"
-
 services:
   traefik:
     image: traefik:v3.1
@@ -27,13 +25,17 @@ services:
       - control
 
   control-api:
-    image: ghcr.io/yourorg/traefik-control-api:latest
+    build:
+      context: ../../traefik-control-plane-api
+    image: traefik-control-plane-api:dev
     container_name: control-api
     restart: unless-stopped
     environment:
       - APP_ENV=production
       - DATABASE_URL=postgresql+psycopg://control:${POSTGRES_PASSWORD}@postgres:5432/traefik_control
       - REDIS_URL=redis://redis:6379
+      - SESSION_SECRET=${SESSION_SECRET}
+      - PUBLIC_BASE_URL=https://traefik-admin.${BASE_DOMAIN}
       - OIDC_ISSUER=${OIDC_ISSUER}
       - OIDC_CLIENT_ID=${OIDC_CLIENT_ID}
       - OIDC_CLIENT_SECRET=${OIDC_CLIENT_SECRET}
@@ -45,32 +47,40 @@ services:
       - LOCAL_AUTH_ENABLED=${LOCAL_AUTH_ENABLED}
       - INITIAL_ADMIN_USERNAME=${INITIAL_ADMIN_USERNAME}
       - INITIAL_ADMIN_PASSWORD_HASH=${INITIAL_ADMIN_PASSWORD_HASH}
+      - AGENT_URL=http://apply-agent:7000
       - AGENT_SHARED_TOKEN=${AGENT_SHARED_TOKEN}
       - API_HOST=0.0.0.0
       - API_PORT=8000
       - API_ROOT_PATH=/api
       - CORS_ALLOWED_ORIGINS=https://traefik-admin.${BASE_DOMAIN}
+      - CONFIG_REPO_PATH=${CONFIG_REPO_PATH:-}
+      - CONFIG_REPO_AUTHOR_NAME=${CONFIG_REPO_AUTHOR_NAME:-traefik-control-plane}
+      - CONFIG_REPO_AUTHOR_EMAIL=${CONFIG_REPO_AUTHOR_EMAIL:-control-plane@local}
+    volumes:
+      - ../../traefik-control-plane-config:/srv/config-repo:rw
     labels:
       - traefik.enable=true
       - traefik.http.routers.control-api.rule=Host(`traefik-admin.${BASE_DOMAIN}`) && PathPrefix(`/api`)
       - traefik.http.routers.control-api.entrypoints=websecure
       - traefik.http.routers.control-api.tls=true
       - traefik.http.routers.control-api.tls.certresolver=le_cf
+      - traefik.http.routers.control-api.middlewares=control-api-stripprefix
+      - traefik.http.middlewares.control-api-stripprefix.stripprefix.prefixes=/api
       - traefik.http.services.control-api.loadbalancer.server.port=8000
     depends_on:
       - postgres
       - redis
+      - apply-agent
     networks:
       - edge
       - control
 
   control-ui:
-    image: ghcr.io/yourorg/traefik-control-ui:latest
+    build:
+      context: ../../traefik-control-plane-ui
+    image: traefik-control-plane-ui:dev
     container_name: control-ui
     restart: unless-stopped
-    environment:
-      - NODE_ENV=production
-      - VITE_API_BASE_URL=/api
     labels:
       - traefik.enable=true
       - traefik.http.routers.control-ui.rule=Host(`traefik-admin.${BASE_DOMAIN}`)
@@ -82,22 +92,20 @@ services:
       - control-api
     networks:
       - edge
-      - control
 
   apply-agent:
-    image: ghcr.io/yourorg/traefik-control-agent:latest
+    build:
+      context: ../../traefik-control-plane-agent
+    image: traefik-control-plane-agent:dev
     container_name: apply-agent
     restart: unless-stopped
     environment:
-      - API_URL=http://control-api:8000
       - AGENT_SHARED_TOKEN=${AGENT_SHARED_TOKEN}
       - TRAEFIK_DYNAMIC_STAGING_DIR=/etc/traefik/dynamic/staging
       - TRAEFIK_DYNAMIC_ACTIVE_DIR=/etc/traefik/dynamic/active
     volumes:
       - ./traefik/dynamic/active:/etc/traefik/dynamic/active
       - ./traefik/dynamic/staging:/etc/traefik/dynamic/staging
-    depends_on:
-      - control-api
     networks:
       - control
 

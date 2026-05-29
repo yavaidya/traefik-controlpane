@@ -1,0 +1,42 @@
+# Local developer override — no TLS/ACME, direct host-port access.
+# Usage: docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d --build
+
+services:
+  traefik:
+    command:
+      - --configFile=/etc/traefik/static/traefik.dev.yml
+    ports: !override
+      - "8088:80"
+      - "8443:443"
+      - "8089:8080"
+    volumes:
+      - ./traefik/static/traefik.dev.yml:/etc/traefik/static/traefik.dev.yml:ro
+
+  control-api:
+    ports:
+      - "8001:8000"
+    environment:
+      - APP_ENV=development
+      - PUBLIC_BASE_URL=http://localhost:5173
+      - CORS_ALLOWED_ORIGINS=http://localhost:5173
+    labels: []
+
+  control-ui:
+    image: ""
+    build:
+      context: ../../traefik-control-plane-ui
+      target: build
+    command: ["npm", "run", "dev", "--", "--host", "0.0.0.0", "--port", "5173"]
+    ports:
+      - "5173:5173"
+    environment:
+      - VITE_DEV_API_PROXY=http://control-api:8000
+    volumes:
+      - ../../traefik-control-plane-ui/src:/app/src
+      - ../../traefik-control-plane-ui/index.html:/app/index.html
+      - ../../traefik-control-plane-ui/vite.config.js:/app/vite.config.js
+    labels: []
+
+  apply-agent:
+    ports:
+      - "7000:7000"

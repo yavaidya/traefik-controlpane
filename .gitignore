@@ -1,0 +1,7 @@
+deploy/.env
+deploy/.env.local
+deploy/traefik/acme/acme.json
+deploy/traefik/dynamic/active/*
+!deploy/traefik/dynamic/active/.gitkeep
+deploy/traefik/dynamic/staging/*
+!deploy/traefik/dynamic/staging/.gitkeep
