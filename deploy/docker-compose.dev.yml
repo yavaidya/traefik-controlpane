@@ -36,6 +36,8 @@ services:
       - ../../traefik-control-plane-ui/public:/app/public
       - ../../traefik-control-plane-ui/index.html:/app/index.html
       - ../../traefik-control-plane-ui/vite.config.js:/app/vite.config.js
+      - ../../traefik-control-plane-ui/postcss.config.js:/app/postcss.config.js
+      - ../../traefik-control-plane-ui/tailwind.config.js:/app/tailwind.config.js
     labels: []
 
   apply-agent:
