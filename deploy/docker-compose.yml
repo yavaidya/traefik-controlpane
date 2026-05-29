@@ -56,6 +56,12 @@ services:
       - CONFIG_REPO_PATH=${CONFIG_REPO_PATH:-}
       - CONFIG_REPO_AUTHOR_NAME=${CONFIG_REPO_AUTHOR_NAME:-traefik-control-plane}
       - CONFIG_REPO_AUTHOR_EMAIL=${CONFIG_REPO_AUTHOR_EMAIL:-control-plane@local}
+      - CLOUDFLARE_API_TOKEN=${CF_DNS_API_TOKEN}
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+      - AWS_REGION=${AWS_REGION}
+      - POWERDNS_API_URL=${POWERDNS_API_URL:-}
+      - POWERDNS_API_KEY=${POWERDNS_API_KEY:-}
     volumes:
       - ../../traefik-control-plane-config:/srv/config-repo:rw
     labels:

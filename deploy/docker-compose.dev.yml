@@ -33,6 +33,7 @@ services:
       - VITE_DEV_API_PROXY=http://control-api:8000
     volumes:
       - ../../traefik-control-plane-ui/src:/app/src
+      - ../../traefik-control-plane-ui/public:/app/public
       - ../../traefik-control-plane-ui/index.html:/app/index.html
       - ../../traefik-control-plane-ui/vite.config.js:/app/vite.config.js
     labels: []

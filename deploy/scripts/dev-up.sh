@@ -41,7 +41,7 @@ chmod 600 traefik/acme/acme.json
 docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d --build
 docker compose -f docker-compose.yml -f docker-compose.dev.yml ps
 echo
-echo "API:  http://localhost:8000/v1/healthz"
+echo "API:  http://localhost:8001/v1/healthz"
 echo "UI:   http://localhost:5173"
-echo "Traefik dashboard: http://localhost:8080"
+echo "Traefik dashboard: http://localhost:8089"
 echo "Default admin: admin / admin"
