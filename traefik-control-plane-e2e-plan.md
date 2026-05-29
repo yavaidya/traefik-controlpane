@@ -696,9 +696,9 @@ Notes:
 - Use DNS challenge for wildcard certs.
 - Do not let UI/API write directly to `active`; only `apply-agent` can promote `staging` to `active`.
 
-## 13. Delivery Plan (12 Weeks)
+## 13. Delivery Plan
 
-## Phase 0 (Week 1): Foundations
+## Phase 0: Foundations
 - Finalize requirements, threat model, architecture decision record.
 - Define protobuf/openapi schemas and DB migrations.
 - Set up repos, CI, linting, test harness.
@@ -706,7 +706,7 @@ Notes:
 Exit Criteria:
 - Approved ADRs and initial CI green.
 
-## Phase 1 (Weeks 2-4): Core Domain + CRUD
+## Phase 1: Core Domain + CRUD
 - Implement DB schema and repositories.
 - Build Routers/Services/Middlewares/TLS CRUD APIs.
 - Implement frontend basic pages/forms.
@@ -715,7 +715,7 @@ Exit Criteria:
 Exit Criteria:
 - Create/edit/delete entities from UI with validation.
 
-## Phase 2 (Weeks 5-6): ChangeSets + Diff + Apply
+## Phase 2: ChangeSets + Diff + Apply
 - Implement changeset lifecycle.
 - Build renderer and diff endpoint.
 - Implement apply agent and deployment lock.
@@ -724,7 +724,7 @@ Exit Criteria:
 Exit Criteria:
 - Draft -> validate -> apply works end-to-end in dev.
 
-## Phase 3 (Weeks 7-8): Rollback + Runtime Sync
+## Phase 3: Rollback + Runtime Sync
 - Deployment history and rollback support.
 - Read-only Traefik API runtime ingestion.
 - Drift detection between desired and runtime state.
@@ -732,7 +732,7 @@ Exit Criteria:
 Exit Criteria:
 - Rollback verified and drift alerts visible.
 
-## Phase 4 (Weeks 9-10): Security + RBAC + Audit
+## Phase 4: Security + RBAC + Audit
 - OIDC integration.
 - RBAC and guarded actions.
 - Signed audit log pipeline.
@@ -740,7 +740,7 @@ Exit Criteria:
 Exit Criteria:
 - Role tests pass; audit complete for all critical operations.
 
-## Phase 5 (Weeks 11-12): Hardening + Production Rollout
+## Phase 5: Hardening + Production Rollout
 - Load tests, failure drills, chaos scenarios.
 - Backup/restore verification.
 - Staged rollout and cutover runbook.
@@ -814,7 +814,7 @@ Exit Criteria:
 4. Git PR approval workflow.
 5. Smart recommendations (unused middleware cleanup, conflict auto-fixes).
 
-## 19. Immediate Next Actions (This Week)
+## 19. Immediate Next Actions
 
 1. Confirm stack:
 - Backend: Go + Fiber/Echo or Node + NestJS.
