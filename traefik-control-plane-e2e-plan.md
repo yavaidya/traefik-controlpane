@@ -53,8 +53,8 @@ Why this approach:
 ## 4. Target Architecture
 
 ## 4.1 Components
-1. Frontend (Next.js + JavaScript + component library).
-2. Backend API (Go preferred for Traefik ecosystem alignment).
+1. Frontend (Vite + React + JavaScript + component library).
+2. Backend API (FastAPI + Python).
 3. PostgreSQL (metadata, authz, audit, config state).
 4. Redis (optional: queues/locks/events).
 5. Config Renderer (domain model -> Traefik dynamic YAML).
@@ -610,17 +610,29 @@ services:
     container_name: control-api
     restart: unless-stopped
     environment:
-      - NODE_ENV=production
+      - APP_ENV=production
       - DATABASE_URL=postgres://control:${POSTGRES_PASSWORD}@postgres:5432/traefik_control
       - REDIS_URL=redis://redis:6379
       - OIDC_ISSUER=${OIDC_ISSUER}
       - OIDC_CLIENT_ID=${OIDC_CLIENT_ID}
       - OIDC_CLIENT_SECRET=${OIDC_CLIENT_SECRET}
       - AGENT_SHARED_TOKEN=${AGENT_SHARED_TOKEN}
+      - API_HOST=0.0.0.0
+      - API_PORT=8000
+      - API_ROOT_PATH=/api
+      - CORS_ALLOWED_ORIGINS=https://traefik-admin.${BASE_DOMAIN}
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.control-api.rule=Host(`traefik-admin.${BASE_DOMAIN}`) && PathPrefix(`/api`)
+      - traefik.http.routers.control-api.entrypoints=websecure
+      - traefik.http.routers.control-api.tls=true
+      - traefik.http.routers.control-api.tls.certresolver=le
+      - traefik.http.services.control-api.loadbalancer.server.port=8000
     depends_on:
       - postgres
       - redis
     networks:
+      - edge
       - control
 
   control-ui:
@@ -629,7 +641,7 @@ services:
     restart: unless-stopped
     environment:
       - NODE_ENV=production
-      - API_BASE_URL=http://control-api:8080
+      - VITE_API_BASE_URL=/api
     labels:
       - traefik.enable=true
       - traefik.http.routers.control-ui.rule=Host(`traefik-admin.${BASE_DOMAIN}`)
@@ -695,6 +707,50 @@ Notes:
 - Keep `./traefik/acme/acme.json` permission at `600`.
 - Use DNS challenge for wildcard certs.
 - Do not let UI/API write directly to `active`; only `apply-agent` can promote `staging` to `active`.
+
+## 12.4 Routing and Base URL Setup (Control UI + Control API)
+
+Recommended public routing model (single domain):
+- Control plane base domain: `https://traefik-admin.${BASE_DOMAIN}`
+- UI routes: `https://traefik-admin.${BASE_DOMAIN}/`
+- API routes: `https://traefik-admin.${BASE_DOMAIN}/api/*`
+
+Traefik routers:
+1. `control-ui` router
+- Rule: `Host(traefik-admin.${BASE_DOMAIN})`
+- Service target: `control-ui:3000`
+
+2. `control-api` router
+- Rule: `Host(traefik-admin.${BASE_DOMAIN}) && PathPrefix(/api)`
+- Service target: `control-api:8000`
+
+FastAPI setup:
+- Set `root_path=/api` so OpenAPI/docs and generated links are consistent when served behind Traefik path prefix.
+- Bind app to `0.0.0.0:8000`.
+- CORS should allow only `https://traefik-admin.${BASE_DOMAIN}` unless there is a second UI origin.
+
+Vite frontend setup (JavaScript only):
+- Use `VITE_API_BASE_URL=/api` in production.
+- All frontend API clients should build URLs from `import.meta.env.VITE_API_BASE_URL`.
+- Avoid hardcoding container DNS names in browser code.
+
+Example JavaScript API client:
+```javascript
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "/api";
+
+export async function apiFetch(path, options = {}) {
+  const response = await fetch(`${API_BASE_URL}${path}`, {
+    credentials: "include",
+    headers: { "Content-Type": "application/json", ...(options.headers || {}) },
+    ...options
+  });
+  if (!response.ok) {
+    const text = await response.text();
+    throw new Error(`API ${response.status}: ${text}`);
+  }
+  return response.status === 204 ? null : response.json();
+}
+```
 
 ## 13. Delivery Plan
 
@@ -817,8 +873,8 @@ Exit Criteria:
 ## 19. Immediate Next Actions
 
 1. Confirm stack:
-- Backend: Go + Fiber/Echo or Node + NestJS.
-- Frontend: Next.js + JavaScript.
+- Backend: FastAPI + Python.
+- Frontend: Vite + React + JavaScript.
 - DB: PostgreSQL.
 
 2. Create repos:
@@ -878,8 +934,8 @@ Create these files as the first executable artifact so the stack can run directl
 
 ## Appendix A: Suggested Tech Choices
 
-- Backend: Go 1.23+, Chi/Echo, sqlc or GORM (sqlc preferred for control and type safety).
-- Frontend: Next.js 15+ (JavaScript), React Hook Form + Zod, TanStack Query.
+- Backend: FastAPI + Uvicorn, SQLAlchemy + Alembic, Pydantic v2.
+- Frontend: Vite + React (JavaScript), React Hook Form + Zod, TanStack Query.
 - Auth: Keycloak/Auth0/Authentik via OIDC.
 - Queue/Locking: Redis Redlock or Postgres advisory locks.
 - Diff Viewer: Monaco diff or `react-diff-view`.
